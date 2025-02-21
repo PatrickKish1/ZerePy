@@ -85,45 +85,47 @@ def list_models(agent, **kwargs):
         logger.error(f"Failed to list models: {str(e)}")
         return None
 
-@register_action("token-query")
-def token_query(agent, **kwargs):
-    """Process natural language token queries and return token information"""
+@register_action("get-token-info")
+def get_token_info(agent, **kwargs):
+    """Get detailed token information with AI insights"""
     try:
-        prompt = kwargs.get("prompt")
-        if not prompt:
-            logger.error("No prompt provided")
+        token_symbol = kwargs.get("token_symbol")
+        chain_id = kwargs.get("chain_id")
+        dex_id = kwargs.get("dex_id")
+
+        if not token_symbol:
+            logger.error("No token symbol provided")
             return None
 
-        # First, use Groq to extract token information from the prompt
-        system_prompt = """
-        Extract token information from the user query. Look for:
-        1. Token symbol or name
-        2. Chain ID (if mentioned)
-        3. DEX ID (if mentioned)
-        Format the response as JSON with fields: token_symbol, chain_id, dex_id
-        If chain_id or dex_id are not mentioned, set them to null.
-        """
-        
-        query_info = agent.connection_manager.connections["groq"].generate_text(
-            prompt=prompt,
-            system_prompt=system_prompt
+        # Get enhanced token information
+        tokens = agent.connection_manager.connections["groq"].get_token_info(
+            token_symbol=token_symbol,
+            chain_id=chain_id,
+            dex_id=dex_id
         )
-        
-        try:
-            # Parse the JSON response
-            query_params = json.loads(query_info)
-            
-            # Get token information using the extracted parameters
-            return agent.perform_action("get-token-info", {
-                "token_symbol": query_params.get("token_symbol"),
-                "chain_id": query_params.get("chain_id"),
-                "dex_id": query_params.get("dex_id")
-            })
-            
-        except json.JSONDecodeError:
-            logger.error("Failed to parse Groq response as JSON")
-            return None
+
+        if not tokens:
+            return "No matching token pairs found."
+
+        # Format the response with AI insights
+        formatted_response = []
+        for token in tokens:
+            token_info = (
+                "--------------------------------\n"
+                "Token Pair Analysis\n"
+                f"Chain: {token['chain']}\n"
+                f"DEX: {token['dex']}\n"
+                f"Name: {token['name']}\n"
+                f"Symbol: {token['symbol']}\n"
+                f"Pair Address: {token['pair_address']}\n"
+                "\nAI Analysis:\n"
+                f"{token['ai_analysis']}\n"
+                "--------------------------------"
+            )
+            formatted_response.append(token_info)
+
+        return "\n\n".join(formatted_response)
 
     except Exception as e:
-        logger.error(f"Token query failed: {str(e)}")
+        logger.error(f"Failed to get token information: {e}")
         return None

@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 from dotenv import load_dotenv, set_key
 from openai import OpenAI
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
@@ -185,6 +185,55 @@ class GroqConnection(BaseConnection):
                 
         except Exception as e:
             raise GroqAPIError(f"Model check failed: {e}")
+        
+    def get_token_info(self, token_symbol: str, chain_id: Optional[str] = None, dex_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Get token information from Sonic connection.
+        
+        Args:
+            token_symbol (str): Token symbol to search for
+            chain_id (str, optional): Chain ID to filter results
+            dex_id (str, optional): DEX ID to filter results
+            
+        Returns:
+            List[Dict[str, Any]]: List of token information dictionaries
+        """
+        try:
+            # Get token information from Sonic connection
+            sonic_connection = self.connection_manager.connections.get("sonic")
+            if not sonic_connection:
+                raise ValueError("Sonic connection not available")
+
+            tokens = sonic_connection.get_token_info(
+                token_symbol=token_symbol,
+                chain_id=chain_id,
+                dex_id=dex_id
+            )
+
+            if not tokens:
+                return []
+
+            # Process and enhance token information with AI insights
+            enhanced_tokens = []
+            for token in tokens:
+                # Generate AI insights about the token
+                insights = self.generate_text(
+                    prompt=f"Analyze this token pair:\nChain: {token['chain']}\nDEX: {token['dex']}\nName: {token['name']}\nSymbol: {token['symbol']}\nProvide a brief analysis of liquidity, trading volume, and potential risks.",
+                    system_prompt="You are a DeFi expert. Analyze the token pair data and provide concise insights."
+                )
+                
+                # Enhance token information with AI insights
+                enhanced_token = {
+                    **token,
+                    "ai_analysis": insights
+                }
+                enhanced_tokens.append(enhanced_token)
+
+            return enhanced_tokens
+
+        except Exception as e:
+            logger.error(f"Failed to get token information: {e}")
+            return []
 
     def list_models(self, **kwargs) -> None:
         """List all available Groq models"""
