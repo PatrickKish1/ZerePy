@@ -65,7 +65,7 @@
      ],
      "tasks": [
        {"name": "get-token-by-ticker", "weight": 1},
-       {"name": "get-sonic-balance", "weight": 1},
+       {"name": "get-balance", "weight": 1},
        {"name": "send-sonic", "weight": 1},
        {"name": "send-sonic-token", "weight": 1},
        {"name": "swap-sonic", "weight": 1},

@@ -29,8 +29,8 @@ def get_token_by_ticker(agent, **kwargs):
         logger.error(f"Failed to get token by ticker: {str(e)}")
         return None
 
-@register_action("get-sonic-balance")
-def get_sonic_balance(agent, **kwargs):
+@register_action("get-balance")
+def get_balance(agent, **kwargs):
     """Get $S or token balance.
     """
     try:
