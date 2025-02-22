@@ -17,8 +17,8 @@ def generate_text(agent, **kwargs):
     """
     try:
         prompt = kwargs.get("prompt")
-        # system_prompt = kwargs.get("system_prompt")
-        system_prompt = kwargs.get(systemPrompt)
+        system_prompt = kwargs.get("system_prompt")
+        # system_prompt = kwargs.get(systemPrompt)
         model = kwargs.get("model")
         temperature = kwargs.get("temperature")
 
