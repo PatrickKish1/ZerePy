@@ -229,15 +229,10 @@ class GroqConnection(BaseConnection):
             enhanced_tokens = []
             for token in tokens:
                 # Combine system prompt with token analysis directive
-                enhanced_system_prompt = f"""{system_prompt}
-        You are also a DeFi expert. Analyze the following token pair data and provide concise insights about liquidity, trading volume, and potential risks."""
+                enhanced_system_prompt = f"""{system_prompt} You are also a DeFi expert. Analyze the pair data and provide concise insights about liquidity, trading volume, and potential risks."""
 
                 # Create token analysis prompt
-                token_prompt = f"""Token Pair Analysis:
-        Chain: {token['chain']}
-        DEX: {token['dex']}
-        Name: {token['name']}
-        Symbol: {token['symbol']}"""
+                token_prompt = f"""Token Pair Analysis: Chain: {token['chain']} DEX: {token['dex']} Name: {token['name']} Symbol: {token['symbol']}"""
 
                 # Generate AI insights using the same pattern as generate_text
                 completion = client.chat.completions.create(
