@@ -103,7 +103,6 @@ def get_token_info(agent, **kwargs):
             
         token_symbol = token
         token_data = sonic_connection.get_token_info(token_symbol)
-        print(f'token data is: {token_data}. and the token symbol is {token_symbol} and token is {token}')
         if not token_data:
             return f"No information found for token: {token}"
 
