@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 from dotenv import load_dotenv
 from src.action_handler import register_action
 
@@ -74,52 +75,33 @@ def list_models(agent, **kwargs):
         logger.error(f"Failed to list models: {str(e)}")
         return None
 
+
 @register_action("get-token-info")
 def get_token_info(agent, **kwargs):
     """Get detailed token information with AI insights"""
     try:
-        token_symbol = kwargs.get("token_symbol")
+        prompt = kwargs.get("prompt")
         system_prompt = kwargs.get("system_prompt")
-        chain_id = kwargs.get("chain_id")
-        dex_id = kwargs.get("dex_id")
+
+        if not prompt or not system_prompt:
+            logger.error("Missing required parameters: prompt and system_prompt")
+            return None
+
+        # Extract token from prompt here (moved from connection)
+        token_pattern = r'\(token:\s*([^\)]+)\)'
+        match = re.search(token_pattern, prompt)
+        if not match:
+            return "No token found in prompt. Please use format (token: TOKEN)"
         
-        if not system_prompt:
-            logger.error("Missing required parameters: system_prompt")
-            return None
-
-        if not token_symbol:
-            logger.error("No token symbol provided")
-            return None
-
-        # Get enhanced token information
-        tokens = agent.connection_manager.connections["groq"].get_token_info(
-            token_symbol=token_symbol,
-            system_prompt=system_prompt,
-            chain_id=chain_id,
-            dex_id=dex_id
+        # Direct passthrough to connection method
+        return agent.connection_manager.connections["groq"].get_token_info(
+            prompt=prompt,
+            system_prompt=system_prompt
         )
 
-        if not tokens:
-            return "No matching token pairs found."
-
-        # Format the response with AI insights
-        formatted_response = []
-        for token in tokens:
-            token_info = (
-                "--------------------------------\n"
-                "Token Pair Analysis\n"
-                f"Chain: {token['chain']}\n"
-                f"DEX: {token['dex']}\n"
-                f"Name: {token['name']}\n"
-                f"Symbol: {token['symbol']}\n"
-                f"Pair Address: {token['pair_address']}\n"
-                "\nAI Analysis:\n"
-                f"{token['ai_analysis']}\n"
-                "--------------------------------"
-            )
-            formatted_response.append(token_info)
-
-        return "\n\n".join(formatted_response)
+    except Exception as e:
+        logger.error(f"Failed to get token information: {e}")
+        return None
 
     except Exception as e:
         logger.error(f"Failed to get token information: {e}")

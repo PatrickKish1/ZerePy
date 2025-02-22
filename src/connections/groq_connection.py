@@ -69,12 +69,10 @@ class GroqConnection(BaseConnection):
             "get-token-info": Action(
                 name="get-token-info",
                 parameters=[
-                    ActionParameter("token_symbol", True, str, "Token symbol to search for"),
-                    ActionParameter("system_prompt", True, str, "System prompt to guide the model"),
-                    ActionParameter("chain_id", False, str, "Optional chain ID filter"),
-                    ActionParameter("dex_id", False, str, "Optional DEX ID filter")
+                    ActionParameter("prompt", True, str, "Prompt containing token in format (token: TOKEN)"),
+                    ActionParameter("system_prompt", True, str, "System prompt to guide the model")
                 ],
-                description="Get detailed token information from Sonic"
+                description="Get detailed token information with AI analysis"
             ),
             "token-query": Action(
                 name="token-query",
