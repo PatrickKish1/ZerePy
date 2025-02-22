@@ -193,18 +193,20 @@ class GroqConnection(BaseConnection):
         except Exception as e:
             raise GroqAPIError(f"Model check failed: {e}")
         
-    def get_token_info(self, token_symbol: str, chain_id: Optional[str] = None, dex_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_token_info(self, token_symbol: str, system_prompt: str, chain_id: Optional[str] = None, dex_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """
-        Get token information from Sonic connection.
+        Get token information from Sonic connection with AI-enhanced insights.
         
         Args:
-            token_symbol (str): Token symbol to search for
-            chain_id (str, optional): Chain ID to filter results
-            dex_id (str, optional): DEX ID to filter results
-            
+        token_symbol (str): Token symbol to search for
+        system_prompt (str): System prompt to guide the AI analysis
+        chain_id (str, optional): Chain ID to filter results
+        dex_id (str, optional): DEX ID to filter results
+        
         Returns:
-            List[Dict[str, Any]]: List of token information dictionaries
+        List[Dict[str, Any]]: List of token information dictionaries with AI insights
         """
+
         try:
             # Get token information from Sonic connection
             sonic_connection = self.connection_manager.connections.get("sonic")
@@ -220,14 +222,33 @@ class GroqConnection(BaseConnection):
             if not tokens:
                 return []
 
-            # Process and enhance token information with AI insights
+            # Get client and model
+            client = self._get_client()
+            model = self.config.get("model")
+
             enhanced_tokens = []
             for token in tokens:
-                # Generate AI insights about the token
-                insights = self.generate_text(
-                    prompt=f"Analyze this token pair:\nChain: {token['chain']}\nDEX: {token['dex']}\nName: {token['name']}\nSymbol: {token['symbol']}\nProvide a brief analysis of liquidity, trading volume, and potential risks.",
-                    system_prompt="You are a DeFi expert. Analyze the token pair data and provide concise insights."
+                # Combine system prompt with token analysis directive
+                enhanced_system_prompt = f"""{system_prompt}
+        You are also a DeFi expert. Analyze the following token pair data and provide concise insights about liquidity, trading volume, and potential risks."""
+
+                # Create token analysis prompt
+                token_prompt = f"""Token Pair Analysis:
+        Chain: {token['chain']}
+        DEX: {token['dex']}
+        Name: {token['name']}
+        Symbol: {token['symbol']}"""
+
+                # Generate AI insights using the same pattern as generate_text
+                completion = client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": enhanced_system_prompt},
+                        {"role": "user", "content": token_prompt},
+                    ]
                 )
+                
+                insights = completion.choices[0].message.content
                 
                 # Enhance token information with AI insights
                 enhanced_token = {
