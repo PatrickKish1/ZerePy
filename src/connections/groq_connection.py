@@ -215,7 +215,6 @@ class GroqConnection(BaseConnection):
         """
         try:
             if not token_data:
-                # print(f'token data is: {token_data}. and the token symbol is {token_symbol} and token is {token}')
                 return "No token information available from connection"
 
             # Format token info for system prompt

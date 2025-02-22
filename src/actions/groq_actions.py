@@ -97,7 +97,7 @@ def get_token_info(agent, **kwargs):
         token = match.group(1).strip()
         
         # Get token data from Sonic connection
-        sonic_connection = agent.connection_manager.connections.get("sonic")
+        sonic_connection = agent.connection_manager.connections["sonic"]
         if not sonic_connection:
             return "Sonic connection not available"
             
