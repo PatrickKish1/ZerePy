@@ -66,6 +66,15 @@ class GroqConnection(BaseConnection):
                 parameters=[],
                 description="List all available Groq models"
             ),
+            "get-token-info": Action(
+                name="get-token-info",
+                parameters=[
+                    ActionParameter("token_symbol", True, str, "Token symbol to search for"),
+                    ActionParameter("chain_id", False, str, "Optional chain ID filter"),
+                    ActionParameter("dex_id", False, str, "Optional DEX ID filter")
+                ],
+                description="Get detailed token information from Sonic"
+            ),
             "token-query": Action(
                 name="token-query",
                 parameters=[
