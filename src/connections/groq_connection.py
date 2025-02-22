@@ -195,24 +195,24 @@ class GroqConnection(BaseConnection):
         
     def get_token_info(self, token_symbol: str, system_prompt: str, chain_id: Optional[str] = None, dex_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """
-        Get token information from Sonic connection with AI-enhanced insights.
+        Get token information from Sonic connection and enhance it with AI analysis.
         
         Args:
-        token_symbol (str): Token symbol to search for
-        system_prompt (str): System prompt to guide the AI analysis
-        chain_id (str, optional): Chain ID to filter results
-        dex_id (str, optional): DEX ID to filter results
-        
+            token_symbol (str): Token symbol to search for
+            system_prompt (str): System prompt to guide the AI analysis
+            chain_id (str, optional): Chain ID to filter results
+            dex_id (str, optional): DEX ID to filter results
+                
         Returns:
-        List[Dict[str, Any]]: List of token information dictionaries with AI insights
+            List[Dict[str, Any]]: List of token information dictionaries with AI insights
         """
-
         try:
-            # Get token information from Sonic connection
+            # Get Sonic connection from the connection manager
             sonic_connection = self.connection_manager.connections.get("sonic")
             if not sonic_connection:
                 raise ValueError("Sonic connection not available")
 
+            # Get token information using Sonic's get_token_info method
             tokens = sonic_connection.get_token_info(
                 token_symbol=token_symbol,
                 chain_id=chain_id,
@@ -222,32 +222,36 @@ class GroqConnection(BaseConnection):
             if not tokens:
                 return []
 
-            # Get client and model
+            # Get client and model for Groq analysis
             client = self._get_client()
             model = self.config.get("model")
 
             enhanced_tokens = []
             for token in tokens:
-                # Combine system prompt with token analysis directive
-                enhanced_system_prompt = f"""{system_prompt} You are also a DeFi expert. Analyze the pair data and provide concise insights about liquidity, trading volume, and potential risks."""
+                # Create a structured token data text for analysis
+                token_data = (
+                    f"Token Pair Analysis:\n"
+                    f"Chain: {token['chain']}\n"
+                    f"DEX: {token['dex']}\n"
+                    f"Name: {token['name']}\n"
+                    f"Symbol: {token['symbol']}\n"
+                    f"Pair Address: {token['pair_address']}"
+                )
 
-                # Create token analysis prompt
-                token_prompt = f"""Token Pair Analysis: Chain: {token['chain']} DEX: {token['dex']} Name: {token['name']} Symbol: {token['symbol']}"""
-
-                # Generate AI insights using the same pattern as generate_text
+                # Generate AI insights using Groq
                 completion = client.chat.completions.create(
                     model=model,
                     messages=[
-                        {"role": "system", "content": enhanced_system_prompt},
-                        {"role": "user", "content": token_prompt},
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": token_data}
                     ]
                 )
                 
                 insights = completion.choices[0].message.content
                 
-                # Enhance token information with AI insights
+                # Combine Sonic data with Groq analysis
                 enhanced_token = {
-                    **token,
+                    **token,  # Original Sonic data
                     "ai_analysis": insights
                 }
                 enhanced_tokens.append(enhanced_token)
