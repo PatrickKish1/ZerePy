@@ -83,6 +83,8 @@ def get_token_info(agent, **kwargs):
         prompt = kwargs.get("prompt")
         system_prompt = kwargs.get("system_prompt")
 
+        if prompt:
+            return f"{prompt}"
         if not prompt or not system_prompt:
             logger.error("Missing required parameters: prompt and system_prompt")
             return None
