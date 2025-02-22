@@ -229,7 +229,7 @@ class GroqConnection(BaseConnection):
             enhanced_tokens = []
             for token in tokens:
                 # Create a structured token data text for analysis
-                token_data = (
+                prompt = (
                     f"Token Pair Analysis:\n"
                     f"Chain: {token['chain']}\n"
                     f"DEX: {token['dex']}\n"
@@ -243,7 +243,7 @@ class GroqConnection(BaseConnection):
                     model=model,
                     messages=[
                         {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": token_data}
+                        {"role": "user", "content": prompt}
                     ]
                 )
                 
