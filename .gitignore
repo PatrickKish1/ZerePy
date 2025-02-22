@@ -14,6 +14,8 @@ agents/*.json
 # Include example agent and general config
 !agents/example.json
 !agents/general.json
+!agents/starter.json
+!agents/eternalai-example.json
 
 # macOS
 .DS_Store
