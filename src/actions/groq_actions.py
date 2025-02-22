@@ -87,16 +87,29 @@ def get_token_info(agent, **kwargs):
             logger.error("Missing required parameters: prompt and system_prompt")
             return None
 
-        # Extract token from prompt here (moved from connection)
+        # Extract token from prompt
+        import re
         token_pattern = r'\(token:\s*([^\)]+)\)'
         match = re.search(token_pattern, prompt)
         if not match:
             return "No token found in prompt. Please use format (token: TOKEN)"
         
-        # Direct passthrough to connection method
+        token = match.group(1).strip()
+        
+        # Get token data from Sonic connection
+        sonic_connection = agent.connection_manager.connections.get("sonic")
+        if not sonic_connection:
+            return "Sonic connection not available"
+            
+        token_data = sonic_connection.get_token_info(token_symbol=token)
+        if not token_data:
+            return f"No information found for token: {token}"
+
+        # Pass token data to Groq connection
         return agent.connection_manager.connections["groq"].get_token_info(
             prompt=prompt,
-            system_prompt=system_prompt
+            system_prompt=system_prompt,
+            token_data=token_data
         )
 
     except Exception as e:

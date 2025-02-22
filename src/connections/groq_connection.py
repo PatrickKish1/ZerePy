@@ -204,39 +204,27 @@ class GroqConnection(BaseConnection):
             logger.error(f"Failed to extract token from prompt: {e}")
             return None
 
-    def get_token_info(self, prompt: str, system_prompt: str, **kwargs) -> str:
+    def get_token_info(self, prompt: str, system_prompt: str, token_data: List[Dict] = None) -> str:
         """
-        Get token information by extracting token from prompt and using Sonic's get_token_info
+        Generate token information analysis using token data and Groq
         
         Args:
             prompt (str): Prompt containing token in format (token: TOKEN)
             system_prompt (str): Base system prompt to enhance with token info
+            token_data (List[Dict]): Token information from Sonic
         """
         try:
-            # Extract token from prompt
-            token = self.extract_token_from_prompt(prompt)
-            if not token:
-                return "No token found in prompt. Please use format (token: TOKEN)"
-                
-            # Get Sonic connection
-            sonic_connection = self.connection_manager.connections.get("sonic")
-            if not sonic_connection:
-                raise ValueError("Sonic connection not available")
-
-            # Get token info from Sonic
-            token_info = sonic_connection.get_token_info(token_symbol=token)
-            
-            if not token_info:
-                return f"No information found for token: {token}"
+            if not token_data:
+                return "No token information available"
 
             # Format token info for system prompt
-            token_data = "\n".join([
-                f"Token Information:",
-                *[f"{k}: {v}" for token in token_info for k,v in token.items()]
+            token_info_text = "\n".join([
+                "Token Information:",
+                *[f"{k}: {v}" for token in token_data for k,v in token.items()]
             ])
             
             # Combine with original system prompt
-            enhanced_system_prompt = f"{system_prompt}\n\nAvailable token data:\n{token_data}"
+            enhanced_system_prompt = f"{system_prompt}\n\nAvailable token data:\n{token_info_text}"
             
             # Generate response using enhanced system prompt
             return self.generate_text(prompt=prompt, system_prompt=enhanced_system_prompt)
