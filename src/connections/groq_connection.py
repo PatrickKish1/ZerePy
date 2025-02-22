@@ -193,74 +193,59 @@ class GroqConnection(BaseConnection):
         except Exception as e:
             raise GroqAPIError(f"Model check failed: {e}")
         
-    def get_token_info(self, token_symbol: str, system_prompt: str, chain_id: Optional[str] = None, dex_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    def extract_token_from_prompt(self, prompt: str) -> Optional[str]:
+        """Extract token from prompt in format (token: {token_name})"""
+        try:
+            import re
+            token_pattern = r'\(token:\s*([^\)]+)\)'
+            match = re.search(token_pattern, prompt)
+            if match:
+                return match.group(1).strip()
+            return None
+        except Exception as e:
+            logger.error(f"Failed to extract token from prompt: {e}")
+            return None
+
+    def get_token_info(self, prompt: str, system_prompt: str, **kwargs) -> str:
         """
-        Get token information from Sonic connection and enhance it with AI analysis.
+        Get token information by extracting token from prompt and using Sonic's get_token_info
         
         Args:
-            token_symbol (str): Token symbol to search for
-            system_prompt (str): System prompt to guide the AI analysis
-            chain_id (str, optional): Chain ID to filter results
-            dex_id (str, optional): DEX ID to filter results
-                
-        Returns:
-            List[Dict[str, Any]]: List of token information dictionaries with AI insights
+            prompt (str): Prompt containing token in format (token: TOKEN)
+            system_prompt (str): Base system prompt to enhance with token info
         """
         try:
-            # Get Sonic connection from the connection manager
+            # Extract token from prompt
+            token = self.extract_token_from_prompt(prompt)
+            if not token:
+                return "No token found in prompt. Please use format (token: TOKEN)"
+                
+            # Get Sonic connection
             sonic_connection = self.connection_manager.connections.get("sonic")
             if not sonic_connection:
                 raise ValueError("Sonic connection not available")
 
-            # Get token information using Sonic's get_token_info method
-            tokens = sonic_connection.get_token_info(
-                token_symbol=token_symbol,
-                chain_id=chain_id,
-                dex_id=dex_id
-            )
+            # Get token info from Sonic
+            token_info = sonic_connection.get_token_info(token_symbol=token)
+            
+            if not token_info:
+                return f"No information found for token: {token}"
 
-            if not tokens:
-                return []
-
-            # Get client and model for Groq analysis
-            client = self._get_client()
-            model = self.config.get("model")
-
-            enhanced_tokens = []
-            for token in tokens:
-                # Create a structured token data text for analysis
-                prompt = (
-                    f"Token Pair Analysis:\n"
-                    f"Chain: {token['chain']}\n"
-                    f"DEX: {token['dex']}\n"
-                    f"Name: {token['name']}\n"
-                    f"Symbol: {token['symbol']}\n"
-                    f"Pair Address: {token['pair_address']}"
-                )
-
-                # Generate AI insights using Groq
-                completion = client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": prompt}
-                    ]
-                )
-                
-                insights = completion.choices[0].message.content
-                
-                # Combine Sonic data with Groq analysis
-                enhanced_token = {
-                    **token,  # Original Sonic data
-                    "ai_analysis": insights
-                }
-                enhanced_tokens.append(enhanced_token)
-
-            return enhanced_tokens
+            # Format token info for system prompt
+            token_data = "\n".join([
+                f"Token Information:",
+                *[f"{k}: {v}" for token in token_info for k,v in token.items()]
+            ])
+            
+            # Combine with original system prompt
+            enhanced_system_prompt = f"{system_prompt}\n\nAvailable token data:\n{token_data}"
+            
+            # Generate response using enhanced system prompt
+            return self.generate_text(prompt=prompt, system_prompt=enhanced_system_prompt)
 
         except Exception as e:
             logger.error(f"Failed to get token information: {e}")
-            return []
+            return f"Error processing token information: {str(e)}"
 
     def list_models(self, **kwargs) -> None:
         """List all available Groq models"""
