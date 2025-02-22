@@ -70,6 +70,7 @@ class GroqConnection(BaseConnection):
                 name="get-token-info",
                 parameters=[
                     ActionParameter("token_symbol", True, str, "Token symbol to search for"),
+                    ActionParameter("system_prompt", True, str, "System prompt to guide the model"),
                     ActionParameter("chain_id", False, str, "Optional chain ID filter"),
                     ActionParameter("dex_id", False, str, "Optional DEX ID filter")
                 ],
