@@ -79,8 +79,13 @@ def get_token_info(agent, **kwargs):
     """Get detailed token information with AI insights"""
     try:
         token_symbol = kwargs.get("token_symbol")
+        system_prompt = kwargs.get("system_prompt")
         chain_id = kwargs.get("chain_id")
         dex_id = kwargs.get("dex_id")
+        
+        if not system_prompt:
+            logger.error("Missing required parameters: system_prompt")
+            return None
 
         if not token_symbol:
             logger.error("No token symbol provided")
@@ -89,6 +94,7 @@ def get_token_info(agent, **kwargs):
         # Get enhanced token information
         tokens = agent.connection_manager.connections["groq"].get_token_info(
             token_symbol=token_symbol,
+            system_prompt=system_prompt,
             chain_id=chain_id,
             dex_id=dex_id
         )
