@@ -1,7 +1,8 @@
 modules = ["python-3.12"]
 run = """
 poetry install
-poetry run python main.py
+poetry install --extras server
+poetry run python main.py --server --host 0.0.0.0 --port 8000
 """
 
 [nix]
@@ -15,7 +16,11 @@ POETRY_HOME = "${HOME}/.local/share/pypoetry"
 PATH = "${HOME}/.local/share/pypoetry/bin:${PATH}"
 
 [deployment]
-run = ["sh", "-c", "poetry install && poetry run python main.py"]
+run = [
+  "sh",
+  "-c",
+  "poetry install && poetry install --extras server && poetry run python main.py --server --host 0.0.0.0 --port 8000",
+]
 deploymentTarget = "gce"
 ignorePorts = true
 
@@ -25,3 +30,6 @@ syntax = "python"
 
 [languages.python.languageServer]
 start = ["pylsp"]
+[[ports]]
+localPort = 8000
+externalPort = 80
