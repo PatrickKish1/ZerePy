@@ -81,41 +81,22 @@ def get_token_info(agent, **kwargs):
     """Get detailed token information with AI insights"""
     try:
         prompt = kwargs.get("prompt")
+        token_symbol = kwargs.get("token_symbol")
         system_prompt = kwargs.get("system_prompt")
+        chain_id = kwargs.get("chain_id")
+        dex_id = kwargs.get("dex_id")
         
-        if not prompt or not system_prompt:
-            logger.error("Missing required parameters: prompt and system_prompt")
+        if not token_symbol or not system_prompt or not prompt:
+            logger.error("Missing required parameters: token_symbol, system_prompt, and prompt")
             return None
-        
-        # Extract token from prompt
-        import re
-        token_pattern = r'\(token:\s*([^\)]+)\)'
-        match = re.search(token_pattern, prompt)
-        if not match:
-            return "No token found in prompt. Please use format (token: TOKEN)"
-            
-        token = match.group(1).strip()
-        
-        # Get token data from Sonic connection
-        sonic_connection = agent.connection_manager.connections["sonic"]
-        if not sonic_connection:
-            return "Sonic connection not available"
-            
-        # Get token info with proper parameter name
-        token_data = sonic_connection.get_token_info(
-            token_symbol=token,  # Use proper parameter name
-            chain_id=None,      # Optional parameter
-            dex_id=None        # Optional parameter
-        )
-        
-        if not token_data:
-            return f"No information found for token: {token}"
 
-        # Pass token data to Groq connection
+        # Get token information from Groq connection
         return agent.connection_manager.connections["groq"].get_token_info(
             prompt=prompt,
+            token_symbol=token_symbol,
             system_prompt=system_prompt,
-            token_data=token_data  # This should now contain the token information
+            chain_id=chain_id,
+            dex_id=dex_id
         )
 
     except Exception as e:

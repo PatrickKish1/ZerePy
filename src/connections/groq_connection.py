@@ -69,8 +69,11 @@ class GroqConnection(BaseConnection):
             "get-token-info": Action(
                 name="get-token-info",
                 parameters=[
-                    ActionParameter("prompt", True, str, "Prompt containing token in format (token: TOKEN)"),
-                    ActionParameter("system_prompt", True, str, "System prompt to guide the model")
+                    ActionParameter("prompt", True, str, "Custom prompt for analysis"),
+                    ActionParameter("token_symbol", True, str, "Token symbol to analyze"),
+                    ActionParameter("system_prompt", True, str, "System prompt to guide the model"),
+                    ActionParameter("chain_id", False, str, "Optional chain ID filter"),
+                    ActionParameter("dex_id", False, str, "Optional DEX ID filter")
                 ],
                 description="Get detailed token information with AI analysis"
             ),
@@ -204,22 +207,36 @@ class GroqConnection(BaseConnection):
             logger.error(f"Failed to extract token from prompt: {e}")
             return None
 
-    def get_token_info(self, prompt: str, system_prompt: str, token_data: List[Dict] = None) -> str:
+    def get_token_info(self, token_symbol: str, system_prompt: str, prompt: str, chain_id: str = None, dex_id: str = None) -> str:
         """
         Generate token information analysis using token data and Groq
         
         Args:
-            prompt (str): Prompt containing token in format (token: TOKEN)
+            token_symbol (str): Token symbol to analyze
             system_prompt (str): Base system prompt to enhance with token info
-            token_data (List[Dict]): Token information from Sonic
+            prompt (str): Custom prompt for analysis
+            chain_id (str, optional): Chain ID to filter results
+            dex_id (str, optional): DEX ID to filter results
         """
         try:
+            # Get sonic connection from connection manager
+            sonic_connection = self.connection_manager.connections.get("sonic")
+            if not sonic_connection:
+                return "Error: Sonic connection not available"
+
+            # Get token data using Sonic's get_token_info
+            token_data = sonic_connection.get_token_info(
+                token_symbol=token_symbol,
+                chain_id=chain_id,
+                dex_id=dex_id
+            )
+
             if not token_data:
-                return "No token information available from connection"
+                return f"No information found for token: {token_symbol}"
 
             # Format token info for system prompt
             token_info_text = "\n".join([
-                "Token Information:",
+                f"Token Information for {token_symbol}:",
                 *[f"{k}: {v}" for token in token_data for k,v in token.items()]
             ])
             
@@ -227,7 +244,10 @@ class GroqConnection(BaseConnection):
             enhanced_system_prompt = f"{system_prompt}\n\nAvailable token data:\n{token_info_text}"
             
             # Generate response using enhanced system prompt
-            return self.generate_text(prompt=prompt, system_prompt=enhanced_system_prompt)
+            return self.generate_text(
+                prompt=prompt,
+                system_prompt=enhanced_system_prompt
+            )
 
         except Exception as e:
             logger.error(f"Failed to get token information: {e}")
