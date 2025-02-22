@@ -5,7 +5,7 @@ __pycache__/
 *.py~
 
 # CONFIG FILES
-.env
+.env*
 twitter_config.json
 
 # AGENTS
