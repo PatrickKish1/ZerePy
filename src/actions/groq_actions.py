@@ -82,20 +82,18 @@ def get_token_info(agent, **kwargs):
     try:
         prompt = kwargs.get("prompt")
         system_prompt = kwargs.get("system_prompt")
-
-        if prompt:
-            return f"{prompt}"
+        
         if not prompt or not system_prompt:
             logger.error("Missing required parameters: prompt and system_prompt")
             return None
-
+        
         # Extract token from prompt
         import re
         token_pattern = r'\(token:\s*([^\)]+)\)'
         match = re.search(token_pattern, prompt)
         if not match:
             return "No token found in prompt. Please use format (token: TOKEN)"
-        
+            
         token = match.group(1).strip()
         
         # Get token data from Sonic connection
@@ -103,8 +101,13 @@ def get_token_info(agent, **kwargs):
         if not sonic_connection:
             return "Sonic connection not available"
             
-        token_symbol = token
-        token_data = sonic_connection.get_token_info(token_symbol)
+        # Get token info with proper parameter name
+        token_data = sonic_connection.get_token_info(
+            token_symbol=token,  # Use proper parameter name
+            chain_id=None,      # Optional parameter
+            dex_id=None        # Optional parameter
+        )
+        
         if not token_data:
             return f"No information found for token: {token}"
 
@@ -112,7 +115,7 @@ def get_token_info(agent, **kwargs):
         return agent.connection_manager.connections["groq"].get_token_info(
             prompt=prompt,
             system_prompt=system_prompt,
-            token_data=token_data
+            token_data=token_data  # This should now contain the token information
         )
 
     except Exception as e:
